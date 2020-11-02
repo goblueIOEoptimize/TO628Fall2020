@@ -48,8 +48,10 @@ nyc$month = as.factor(nyc$month)
 nyc$dest = as.factor(nyc$dest) 
 nyc$carrier = as.factor(nyc$carrier) 
 nyc$flight = as.factor(nyc$flight) 
-summary(nyc)
+#summary(nyc) 
+
 ```
+The data was cleaned by removing the row number column and changing some variables to factors such as the origin, tialnum,month,dest,carrier, and flight. 
 # Exploration of Data 
 ## Data Exploration
 
@@ -156,27 +158,60 @@ Based on the above values the mean is skewed to the right. In this case the medi
 
 
 ### Airline Performance
-The highest arrival delay is from F9 and the lowest is from AS. 
-The respective max is `r max(tapply(nyc$arr_delay,nyc$carrier, mean, na.rm = T))` and the lowest is `r min(tapply(nyc$arr_delay,nyc$carrier, mean, na.rm = T))`. 
+
+
 ```{r} 
 # creating a box plot for arr_delay by carrier 
 delay_airline = tapply(nyc$arr_delay,nyc$carrier, mean, na.rm = T) 
 barplot(delay_airline)
-delay_airline
+delay_airline 
+#names(delay_airline[min(delay_airline)]) 
+#names( delay_airline %>% filter( max(delay_airline)))
+mn = tapply(nyc$arr_delay,nyc$carrier, mean, na.rm = T) 
+#df = data.frame(template=names(mn),mean=mn) 
+df =  nyc %>% group_by(carrier) %>% summarize(mean_arr = mean(arr_delay,na.rm =T)) 
+df %>% filter( mean_arr ==max(mean_arr)) %>% select(carrier)
+#y = df %>%  filter(mean == min(mean)) %>% select(template) 
+
+#df$template[max(df$mean)]
+# finding values velow 0 
+df %>% filter( mean_arr < 0) %>% select(carrier)
+max(delay_airline
+)
+
+#Calculate average arrival delays by airline (Hint: look up the command tapply)
+delay_by_airline = tapply(nyc$arr_delay, nyc$carrier, mean, na.rm = TRUE)
+#delay_by_airline
+
+#Draw a Bar Plot of Average Arrival Delays for all the Airlines (Hint: command for making a Bar Plot is simply barplot)
+barplot(delay_by_airline)
+sum(delay_by_airline < 0)
+
+#The respective max is `r max(tapply(nyc$arr_delay,nyc$carrier, mean, na.rm = T))` and the lowest is `r #min(tapply(nyc$arr_delay,nyc$carrier, mean, na.rm = T))`. 
+
+#The highest arrival delay is from `r df %>% filter( mean_arr ==max(mean_arr)) %>% select(carrier)`  and the lowest is `r df #%>% filter( mean_arr ==min(mean_arr)) %>% select(carrier)`. 
+
+#There are two negative airlines for arrival delay: `r df %>% filter( mean_arr < 0) %>% select(carrier)`
+
 
 ```
+The airline with the highest arrival delay is: `r names(delay_by_airline[delay_by_airline == max(delay_by_airline)])` and the amount of delay is: `r round(max(delay_by_airline),2)` minutes.
+The airline with the lowest arrival delay is: `r names(delay_by_airline[delay_by_airline == min(delay_by_airline)])` and the amount of delay is: `r round(min(delay_by_airline),2)` minutes.
+There are `r sum(delay_by_airline < 0)` carriers that have a negative average delay.
+
+
+
 ```{r}  
 #grab the name later 
 #nyc %>% filter(mean_delay = max(delay_airline)) 
 # finding max and min 
-max(delay_airline
-)
+
 
 min(delay_airline)   
 # seeing which is negative  
-delay_airline <0
-neg_delay_by_airline = nyc[delay_airline < 0, ]
-neg_delay_by_airline 
+#delay_airline <0
+#neg_delay_by_airline = nyc[delay_airline < 0, ]
+#neg_delay_by_airline 
 #F9 is highest, AS is lowest 
 ```
 
@@ -190,17 +225,21 @@ Lets see if all airlines are equally terrible as far as flight arrival delays ar
 
 ### Air Gain 
 The mean air gain is `r mean(nyc$dep_delay - nyc$arr_delay , na.rm = T)`. Airlines actually do gain on average this time, but it varies by airlines. The airline with the worst job is F9 and the airline with the best job is AS.   
+
 ```{r}
 nyc$airgain = nyc$dep_delay - nyc$arr_delay  
 mean(nyc$airgain, na.rm = T)
 #air_airline = nyc %>% group_by(carrier) %>% summarize(mean_airgain = mean(airgain, na.rim = TRUE))
 air_by_airline = tapply(nyc$airgain,nyc$carrier, mean, na.rm = T)  
 barplot(air_by_airline)  
-air_by_airline
+#air_by_airline
 # yes they do gain time on average 
-# F9 
+# F9  
+# finding max and min and names 
 max(air_by_airline) 
 min(air_by_airline)
+names(air_by_airline[air_by_airline == min(air_by_airline)])
+names(air_by_airline[air_by_airline == max(air_by_airline)])
 ```
 
 Create a new column named airgain such that airgain = (departure delay - arrival delay) : this is the amount of delay a flight made up while in air.
@@ -237,14 +276,17 @@ ncol(nyc_plane)
 ```
 Looking at the arrival delay by manufacturer. We can see that the airlane delay varies wildly. The most positive delay is `r max(tapply(nyc_plane$arr_delay,nyc_plane$manufacturer, mean, na.rm = T) )` and the smallest is `r min(tapply(nyc_plane$arr_delay,nyc_plane$manufacturer, mean, na.rm = T) )`  
 
-Airbus has the highest delay and american aircraft is the lowest for the delay. 
+Agusta SPA  has the highest delay and american aircraft is the lowest for the delay. 
 ```{r}
-#summary(nyc_plane) 
+#summary(nyc_plane)  
+
+# finding max and min and creating a bar plot
 arrdelay_manufacturer=tapply(nyc_plane$arr_delay,nyc_plane$manufacturer, mean, na.rm = T) 
 barplot(arrdelay_manufacturer) 
 min(arrdelay_manufacturer) 
 max(arrdelay_manufacturer) 
-print(arrdelay_manufacturer)
+names(arrdelay_manufacturer[arrdelay_manufacturer == min(arrdelay_manufacturer)])
+names(arrdelay_manufacturer[arrdelay_manufacturer == max(arrdelay_manufacturer)])
 ``` 
 The arrival delay by engine count was also quite telling. Interestingly all engines have positive arrival delay except for airplines with three engines. After digging into the level it seems that 2 engines is extremely common and comprises almost 100% of all levels. 
 
@@ -261,7 +303,7 @@ nyc_plane %>%
   summarise(no_rows = length(engines))
 
 ```
-Looking further into arrival delay, we can see that the number of seats by arr_dleay follows an expected pattern. As the number of seats increase on the airline (x-axis), the arr_dlay variation increases. Most notably around 150-200 seats there is very low arrial delay, in part due to the fact the mean is around this value for all flights.  
+Looking further into arrival delay, we can see that the number of seats by arr_delay does not follow a trend. As the number of seats increase on the airline (x-axis), the arrival delay does not change. Most notably around 150-200 seats there is very low arrial delay, in part due to the fact the mean is around this value for all flights. It seems that at around 149, 375, and 450 there are high outliers. 
 ```{r}
 seats_arr= tapply(nyc_plane$arr_delay,nyc_plane$seats, mean, na.rm = T) 
 barplot(seats_arr)
@@ -270,21 +312,32 @@ mean( nyc_plane$seats, na.rm = T)
 ```
 
 
-When looking at United Airlines with August flights from JFK, there appears to be no pattern with arr_delay and departure time, except for the fact as departure time of day (0-2400) increases the variance of arr_delay increases. 
-```{r}
-nyc_8 = nyc_plane %>% filter( month == 8, carrier == "UA", origin == "JFK")  
-test = tapply(nyc_8$arr_delay,nyc_8$dep_time, mean, na.rm = T)  
+When looking at August flights from JFK, I wanted to see the departure delay by manufacturere. while the low value was gulfstream aerospace on average, and the max was aviat aircraft inc. I found that overall there was a postive departure delay across most manufacturers. This makes sense given weather delays and other factors that should impact most carriers.Looking deeper into the data these manufacturers were rare and may explain the high or low mean values.  
+```{r} 
+#summary(nyc_plane) 
+# reading in and filtering the data
+nyc_8 = nyc_plane %>% filter( month == 8, origin == "JFK")   
+# applying functions to find the departure delay by manufacturer
+dep_man = tapply(nyc_8$dep_delay,nyc_8$manufacturer, mean, na.rm = T)  
+#plotting data 
+barplot(dep_man)
 length(nyc_8$dep_time)
-length(nyc_8$airgain)
-summary(nyc_8)
-barplot(test) 
+length(nyc_8$airgain) 
+sum( nyc_8$manufacturer == "AVIAT AIRCRAFT INC")
+#summary(nyc_8)
+#nyc_8 %>% ggplot() + geom_point(aes(arr_delay,speed))   
 #print(nyc_8$year.y)
 #apply(nyc_2013_8$speed,nyc_2013_8$)
+
+#names(dep_man[dep_man == min(dep_man,na.rm = T)])
+#(dep_man[dep_man == max(dep_man,na.rm = T)])
 ```
+When looking at arrivals delay by day of the month, there seems to be a pattern where overall after a period of up to 7 days there will be a switch from positive to negative delay. 
 
 ```{r}
-nyc_8 = nyc_plane %>% filter( month == 8, carrier == "UA", origin == "JFK")  
-summary(nyc_plane)
+nyc_JFK = nyc_plane %>% filter( origin == "JFK")  
+day_delay=tapply(nyc_JFK$arr_delay,nyc_JFK$day,mean,na.rm= T) 
+barplot(day_delay)
 ```
 
 > This section and the next is new compared to the class exercise. As you had an opportunity to work together in your breakout rooms for previous questions, this and the next section will carry a higher weight in grading for this HW.
